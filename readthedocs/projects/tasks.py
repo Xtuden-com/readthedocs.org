@@ -426,6 +426,9 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
                 self.send_notifications()
                 return False
 
+        # send update to River of Ebooks webhook with new version info
+        notify_RoE(version_pk, build_pk)
+
         return True
 
     def run_setup(self, record=True):
@@ -1329,6 +1332,29 @@ def webhook_notification(version, build, hook_url):
         requests.post(hook_url, data=data)
     except Exception:
         log.exception('Failed to POST on webhook url: url=%s', hook_url)
+
+def notify_RoE(version_pk, build_pk):
+    """
+    Send webhook notification to River of Ebooks
+    :param version_pk: :py:class:`Version` instance being updated
+    :param build_pk: :py:class:`Build` instance of the update
+    """
+    version = Version.objects.get(pk=version_pk)
+    build = Build.objects.get(pk=build_pk)
+    project = version.project
+
+    data = json.dumps({
+        'title': project.name,
+        'author': project.repo,
+        'version': build.version,
+        'opds': '' # (to be done)
+    })
+
+    try:
+        # obviously this address will have to be replaced in the future
+        requests.post('http://localhost:3000/api/publish', data=data)
+    except Exception:
+        log.exception('Failed to POST to RoE webhook')
 
 
 @app.task(queue='web')
