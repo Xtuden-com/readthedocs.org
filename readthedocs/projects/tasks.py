@@ -427,7 +427,11 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
                 return False
 
         # send update to River of Ebooks webhook with new version info
-        notify_RoE(version_pk, build_pk)
+        try:
+            notify_RoE(version_pk, build_pk)
+        except Exception:
+            exception.log("failed to notify RoE")
+
 
         return True
 
@@ -1343,11 +1347,35 @@ def notify_RoE(version_pk, build_pk):
     build = Build.objects.get(pk=build_pk)
     project = version.project
 
+    
+
     data = json.dumps({
         'title': project.name,
         'author': project.repo,
         'version': build.version,
-        'opds': '' # (to be done)
+        'opds':     # eventually we'll get more information dynamically
+        {           #  but for now we just grab these few hard-coded values
+            'metadata': {
+                'title': project.name
+            },
+            'links': [
+                {'rel': 'self', 'href': project.repo},
+                version.downloads   # links to RtD pdf, epub, etc
+            ],
+            'publications': [
+                'metadata': {
+                    '@type': 'http://schema.org/Book',
+                    'title': project.name,
+                    'author': project.repo,
+                    'version': build.version,
+                    'modified': build.date
+                },
+                'links': [
+                    {'rel': 'self', 'href': project.repo},
+                    version.downloads
+                ]
+            ]
+        }
     })
 
     try:
