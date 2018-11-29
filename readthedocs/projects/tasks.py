@@ -1195,20 +1195,24 @@ def notify_RoE(version_pk, build_pk):
 
     
 
-    data = json.dumps({
+     data = {
         'title': project.name,
         'author': project.repo,
-        'version': build.version,
-        'opds':     # eventually we'll get more information dynamically
-        {           #  but for now we just grab these few hard-coded values
-            'metadata': {
-                'title': project.name
-            },
-            'links': [
-                {'rel': 'self', 'href': project.repo},
-                version.downloads   # links to RtD pdf, epub, etc
-            ],
-            'publications': [
+        'version': build.version
+    }
+
+    # eventually we'll get more information dynamically
+    #  but for now we just grab these few hard-coded values
+    opds = {
+        'metadata': {
+            'title': project.name
+        },
+        'links': [
+            {'rel': 'self', 'href': project.repo, 'type':'application/opds+json'},  # link to github repo
+            version.downloads   # links to RtD pdf, epub, etc
+        ],
+        'publications': [
+            {
                 'metadata': {
                     '@type': 'http://schema.org/Book',
                     'title': project.name,
@@ -1217,18 +1221,20 @@ def notify_RoE(version_pk, build_pk):
                     'modified': build.date
                 },
                 'links': [
-                    {'rel': 'self', 'href': project.repo},
-                    version.downloads
+                    {'rel': 'self', 'href': project.repo},  # link to github repo
+                    version.downloads   # links to RtD pdf, epub, etc
                 ]
-            ]
-        }
-    })
+            }
+        ]
+    }
 
     try:
         # obviously this address will have to be replaced in the future
-        requests.post('http://localhost:3000/api/publish', data=data)
-    except Exception:
+        # url = "http://localhost:3000/api/publish"
+        requests.post(url, data=data, files={'opds':json.dumps(opds)})
+    except Exception as e:
         log.exception('Failed to POST to RoE webhook')
+
 
 
 @app.task(queue='web')
