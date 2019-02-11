@@ -214,6 +214,7 @@ class ProjectAdvancedForm(ProjectTriggerBuildMixin, ProjectForm):
             'show_version_warning',
             'enable_pdf_build',
             'enable_epub_build',
+            'enable_roe_build',
             # Privacy
             'privacy_level',
             # 'version_privacy_level',
