@@ -79,4 +79,6 @@ def get_default_formats(project):
         formats += ['epub']
     if project.enable_pdf_build:
         formats += ['pdf']
+    if project.enable_roe_build:
+        formats += ['roe']
     return formats
