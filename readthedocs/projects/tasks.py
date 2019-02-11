@@ -1349,7 +1349,7 @@ def notify_RoE(version_pk, build_pk):
 
     
 
-     data = {
+    data = {
         'title': project.name,
         'author': project.repo,
         'version': build.version

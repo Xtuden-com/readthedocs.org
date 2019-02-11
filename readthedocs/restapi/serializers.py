@@ -57,6 +57,7 @@ class ProjectAdminSerializer(ProjectSerializer):
         fields = ProjectSerializer.Meta.fields + (
             'enable_epub_build',
             'enable_pdf_build',
+            'enable_roe_build',
             'conf_py_file',
             'analytics_code',
             'cdn_enabled',
