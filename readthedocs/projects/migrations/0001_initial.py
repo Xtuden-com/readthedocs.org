@@ -49,6 +49,7 @@ class Migration(migrations.Migration):
                 ('analytics_code', models.CharField(help_text='Google Analytics Tracking ID (ex. <code>UA-22345342-1</code>). This may slow down your page loads.', max_length=50, null=True, verbose_name='Analytics code', blank=True)),
                 ('enable_epub_build', models.BooleanField(default=True, help_text='Create a EPUB version of your documentation with each build.', verbose_name='Enable EPUB build')),
                 ('enable_pdf_build', models.BooleanField(default=True, help_text='Create a PDF version of your documentation with each build.', verbose_name='Enable PDF build')),
+                ('enable_roe_build', models.BooleanField(default=True, help_text='Publish your documentation to River of Ebooks with each build.', verbose_name='Enable River of Ebooks publishing')),
                 ('path', models.CharField(help_text='The directory where <code>conf.py</code> lives', verbose_name='Path', max_length=255, editable=False)),
                 ('conf_py_file', models.CharField(default=b'', help_text='Path from project root to <code>conf.py</code> file (ex. <code>docs/conf.py</code>).Leave blank if you want us to find it for you.', max_length=255, verbose_name='Python configuration file', blank=True)),
                 ('featured', models.BooleanField(default=False, verbose_name='Featured')),
