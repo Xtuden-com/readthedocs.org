@@ -425,14 +425,6 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
                 # Send notifications for unhandled errors
                 self.send_notifications()
                 return False
-
-        # send update to River of Ebooks webhook with new version info
-        try:
-            notify_RoE(version_pk, build_pk)
-        except Exception:
-            exception.log("failed to notify RoE")
-
-
         return True
 
     def run_setup(self, record=True):
@@ -754,6 +746,15 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
             ),
         )
 
+        # send update to River of Ebooks webhook with new version info
+        if 'roe' in self.config.formats and (   # if RoE publishing is enabled for repo
+            html or localmedia or pdf or epub   # and at least one build succeeded
+        ):
+            try:
+                notify_RoE(build_pk)
+            except Exception:
+                exception.log("failed to notify RoE")
+
     def setup_python_environment(self):
         """
         Build the virtualenv and install the project into it.
@@ -889,6 +890,58 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
     def is_type_sphinx(self):
         """Is documentation type Sphinx."""
         return 'sphinx' in self.config.doctype
+
+    def notify_RoE(self):
+        """
+        Send webhook notification to River of Ebooks
+        :param build_pk: :py:class:`Build` instance of the update
+        """
+        version = self.version
+        build = self.build
+        project = self.project
+
+        
+
+        data = {
+            'title': project.name,
+            'author': project.repo,
+            'version': build.version
+        }
+
+        # eventually we'll get more information dynamically
+        #  but for now we just grab these few hard-coded values
+        opds = {
+            'metadata': {
+                'title': project.name
+            },
+            'links': [
+                {'rel': 'self', 'href': project.repo, 'type':'application/opds+json'},  # link to github repo
+                version.downloads   # links to RtD pdf, epub, etc
+            ],
+            'publications': [
+                {
+                    'metadata': {
+                        '@type': 'http://schema.org/Book',
+                        'title': project.name,
+                        'author': project.repo,
+                        'version': build.version,
+                        'modified': build.date
+                    },
+                    'links': [
+                        {'rel': 'self', 'href': project.repo},  # link to github repo
+                        version.downloads   # links to RtD pdf, epub, etc
+                    ]
+                }
+            ]
+        }
+
+        try:
+            # obviously this address will have to be replaced in the future
+            # url = "http://localhost:3000/api/publish"
+            requests.post(url, data=data, files={'opds':json.dumps(opds)})
+        except Exception as e:
+            log.exception('Failed to POST to RoE webhook')
+
 
 
 # Web tasks
@@ -1336,59 +1389,6 @@ def webhook_notification(version, build, hook_url):
         requests.post(hook_url, data=data)
     except Exception:
         log.exception('Failed to POST on webhook url: url=%s', hook_url)
-
-def notify_RoE(version_pk, build_pk):
-    """
-    Send webhook notification to River of Ebooks
-    :param version_pk: :py:class:`Version` instance being updated
-    :param build_pk: :py:class:`Build` instance of the update
-    """
-    version = Version.objects.get(pk=version_pk)
-    build = Build.objects.get(pk=build_pk)
-    project = version.project
-
-    
-
-    data = {
-        'title': project.name,
-        'author': project.repo,
-        'version': build.version
-    }
-
-    # eventually we'll get more information dynamically
-    #  but for now we just grab these few hard-coded values
-    opds = {
-        'metadata': {
-            'title': project.name
-        },
-        'links': [
-            {'rel': 'self', 'href': project.repo, 'type':'application/opds+json'},  # link to github repo
-            version.downloads   # links to RtD pdf, epub, etc
-        ],
-        'publications': [
-            {
-                'metadata': {
-                    '@type': 'http://schema.org/Book',
-                    'title': project.name,
-                    'author': project.repo,
-                    'version': build.version,
-                    'modified': build.date
-                },
-                'links': [
-                    {'rel': 'self', 'href': project.repo},  # link to github repo
-                    version.downloads   # links to RtD pdf, epub, etc
-                ]
-            }
-        ]
-    }
-
-    try:
-        # obviously this address will have to be replaced in the future
-        # url = "http://localhost:3000/api/publish"
-        requests.post(url, data=data, files={'opds':json.dumps(opds)})
-    except Exception as e:
-        log.exception('Failed to POST to RoE webhook')
-
 
 
 @app.task(queue='web')
