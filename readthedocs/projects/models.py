@@ -260,6 +260,11 @@ class Project(models.Model):
             'Create a PDF version of your documentation with each build.',
         ),
     )
+    enable_roe_build = models.BooleanField(
+        _('Enable River of Ebooks publishing'), default=False,
+        help_text=_('Publish your documentation to River of Ebooks with each build.',
+        ),
+    )
 
     # Other model data.
     path = models.CharField(
@@ -744,6 +749,12 @@ class Project(models.Model):
                 version_slug=version_slug,
             )
         )
+
+    def has_roe(self, version_slug=LATEST):
+        if not self.enable_roe_build:
+            return False
+        return os.path.exists(self.get_production_media_path(
+            type_='pdf', version_slug=version_slug))
 
     def has_htmlzip(self, version_slug=LATEST):
         return os.path.exists(
