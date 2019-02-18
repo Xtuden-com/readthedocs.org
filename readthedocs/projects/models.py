@@ -261,8 +261,10 @@ class Project(models.Model):
         ),
     )
     enable_roe_build = models.BooleanField(
-        _('Enable River of Ebooks publishing'), default=False,
-        help_text=_('Publish your documentation to River of Ebooks with each build.',
+        _('Enable River of Ebooks publishing'),
+        default=False,
+        help_text=_(
+            'Publish your documentation to River of Ebooks with each build.',
         ),
     )
 
