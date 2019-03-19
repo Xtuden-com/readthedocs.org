@@ -225,6 +225,7 @@ class ProjectAdvancedForm(ProjectTriggerBuildMixin, ProjectForm):
             'conf_py_file',
             'enable_pdf_build',
             'enable_epub_build',
+            'enable_roe_build',
         )
 
     def __init__(self, *args, **kwargs):
