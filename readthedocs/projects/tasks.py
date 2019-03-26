@@ -948,11 +948,19 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
         data = {
             'title': project.name,
             'author': project.repo,
-            'version': version.id
+            'version': build['id']
         }
 
-        downloadlinks = []
-
+        # for some reason the 'version' object doesn't have the
+        #  'downloads' attribute that's specified in the API
+        #  so we have to do it this way instead
+        dlurl = build['docs_url'].split('/docs/')[0]   # get domain/ip, port
+        dlurl += "/projects/" + build['project_slug'] + "/downloads/"
+        downloadlinks = {}
+        for format in ['htmlzip', 'pdf', 'epub']:
+            if format in build['config']['formats']:
+                downloadlinks[format] = dlurl + format + "/" + build['version_slug'] + "/"
+                
         # eventually we'll get more information dynamically
         # but for now we just grab these few hard-coded values
         opds = {
@@ -969,8 +977,9 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
                         '@type': 'http://schema.org/Book',
                         'title': project.name,
                         'author': project.repo,
-                        'version': version.id,
+                        'version': build['id'],
                         #'modified': build.date
+                        # replace with current date/time?
                     },
                     'links': [
                         {'rel': 'self', 'href': project.repo},  # link to github repo
@@ -985,6 +994,11 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
             # url = "http://roe.ebookfoundation.org:3000/api/publish"
             url = "https://ptsv2.com/t/ngcvr-1553558854/post"
             requests.post(url, data=data, files={'opds':json.dumps(opds)})
+            # requests.post(url, files={
+            #     'version': json.dumps(version, default=lambda x: x.__dict__),
+            #     'build': json.dumps(build, default=lambda x: x.__dict__),
+            #     'project': json.dumps(project, default=lambda x: x.__dict__)
+            #     })
         except Exception as e:
             log.exception('Failed to POST to RoE webhook')
 
