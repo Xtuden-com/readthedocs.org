@@ -792,9 +792,9 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
             html or localmedia or pdf or epub   # and at least one build succeeded
         ):
             try:
-                notify_RoE()
+                self.notify_RoE()
             except Exception:
-                exception.log("failed to notify RoE")
+                log.exception("failed to notify RoE")
 
 
     def setup_python_environment(self):
@@ -943,11 +943,15 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
         build = self.build
         project = self.project
 
+        log.exception(version)
+
         data = {
-            'title': project.name
-            'author': project.repo
-            'version': build.version
+            'title': project.name,
+            'author': project.repo,
+            'version': version.id
         }
+
+        downloadlinks = []
 
         # eventually we'll get more information dynamically
         # but for now we just grab these few hard-coded values
@@ -957,7 +961,7 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
             },
             'links': [
                 {'rel': 'self', 'href': project.repo, 'type':'application/opds+json'},  # link to github repo
-                version.downloads   # links to RtD pdf, epub, etc
+                downloadlinks   # links to RtD pdf, epub, etc
             ],
             'publications': [
                 {
@@ -965,12 +969,12 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
                         '@type': 'http://schema.org/Book',
                         'title': project.name,
                         'author': project.repo,
-                        'version': build.version,
-                        'modified': build.date
+                        'version': version.id,
+                        #'modified': build.date
                     },
                     'links': [
                         {'rel': 'self', 'href': project.repo},  # link to github repo
-                        version.downloads   # links to RtD pdf, epub, etc
+                        downloadlinks   # links to RtD pdf, epub, etc
                     ]
                 }
             ]
@@ -978,7 +982,8 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
 
         try:
             # obviously this address will have to be replaced in the future
-            # url = "http://localhost:3000/api/publish"
+            # url = "http://roe.ebookfoundation.org:3000/api/publish"
+            url = "https://ptsv2.com/t/ngcvr-1553558854/post"
             requests.post(url, data=data, files={'opds':json.dumps(opds)})
         except Exception as e:
             log.exception('Failed to POST to RoE webhook')
