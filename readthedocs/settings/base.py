@@ -403,6 +403,10 @@ class CommunityBaseSettings(Settings):
     STRIPE_SECRET = None
     STRIPE_PUBLISHABLE = None
 
+    # River of Ebooks
+    ROE_API_KEY = 'intentionally blank'
+    ROE_API_SECRET = 'intentionally blank'
+
     # Do Not Track support
     DO_NOT_TRACK_ENABLED = False
 

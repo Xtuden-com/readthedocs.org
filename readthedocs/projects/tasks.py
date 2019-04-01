@@ -789,12 +789,8 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
 
         # send update to River of Ebooks webhook with new version info
         if 'roe' in self.config.formats and (   # if RoE publishing is enabled for repo
-            html or localmedia or pdf or epub   # and at least one build succeeded
-        ):
-            try:
-                self.notify_RoE()
-            except Exception:
-                log.exception("failed to notify RoE")
+            html or localmedia or pdf or epub): #  and at least one build succeeded
+            self.notify_RoE()
 
 
     def setup_python_environment(self):
@@ -929,78 +925,14 @@ class UpdateDocsTaskStep(SyncRepositoryMixin):
     def send_notifications(self):
         """Send notifications on build failure."""
         send_notifications.delay(self.version.pk, build_pk=self.build['id'])
+    
+    def notify_RoE(self):
+        """Send webhook notification to River of Ebooks"""
+        notify_RoE.delay(self.build['id'], self.project.pk)
 
     def is_type_sphinx(self):
         """Is documentation type Sphinx."""
         return 'sphinx' in self.config.doctype
-
-    def notify_RoE(self):
-        """
-        Send webhook notification to River of Ebooks
-        """
-
-        version = self.version
-        build = self.build
-        project = self.project
-
-        log.exception(version)
-
-        data = {
-            'title': project.name,
-            'author': project.repo,
-            'version': build['id']
-        }
-
-        # for some reason the 'version' object doesn't have the
-        #  'downloads' attribute that's specified in the API
-        #  so we have to do it this way instead
-        dlurl = build['docs_url'].split('/docs/')[0]   # get domain/ip, port
-        dlurl += "/projects/" + build['project_slug'] + "/downloads/"
-        downloadlinks = {}
-        for format in ['htmlzip', 'pdf', 'epub']:
-            if format in build['config']['formats']:
-                downloadlinks[format] = dlurl + format + "/" + build['version_slug'] + "/"
-                
-        # eventually we'll get more information dynamically
-        # but for now we just grab these few hard-coded values
-        opds = {
-            'metadata': {
-                'title': project.name
-            },
-            'links': [
-                {'rel': 'self', 'href': project.repo, 'type':'application/opds+json'},  # link to github repo
-                downloadlinks   # links to RtD pdf, epub, etc
-            ],
-            'publications': [
-                {
-                    'metadata': {
-                        '@type': 'http://schema.org/Book',
-                        'title': project.name,
-                        'author': project.repo,
-                        'version': build['id'],
-                        #'modified': build.date
-                        # replace with current date/time?
-                    },
-                    'links': [
-                        {'rel': 'self', 'href': project.repo},  # link to github repo
-                        downloadlinks   # links to RtD pdf, epub, etc
-                    ]
-                }
-            ]
-        }
-
-        try:
-            # obviously this address will have to be replaced in the future
-            # url = "http://roe.ebookfoundation.org:3000/api/publish"
-            url = "https://ptsv2.com/t/ngcvr-1553558854/post"
-            requests.post(url, data=data, files={'opds':json.dumps(opds)})
-            # requests.post(url, files={
-            #     'version': json.dumps(version, default=lambda x: x.__dict__),
-            #     'build': json.dumps(build, default=lambda x: x.__dict__),
-            #     'project': json.dumps(project, default=lambda x: x.__dict__)
-            #     })
-        except Exception as e:
-            log.exception('Failed to POST to RoE webhook')
 
 
 # Web tasks
@@ -1426,6 +1358,46 @@ def _manage_imported_files(version, path, commit):
         files=changed_files,
     )
 
+@app.task(queue='web')
+def notify_RoE(build_pk, project_pk):
+
+    # post headers contain API auth key from settings
+    roe_key = getattr(settings, 'ROE_API_KEY', None)
+    roe_sec = getattr(settings, 'ROE_API_SECRET', None)
+    if roe_key is None or roe_sec is None:
+        log.exception('RoE API key not available')
+        return
+    headers = {
+        'roe-key': roe_key,
+        'roe-secret': roe_sec
+    }
+
+    build = Build.objects.get(pk=build_pk)
+    project = Project.objects.get(pk=project_pk)
+
+    # values supplied as per River of Ebooks specification
+    opds = {
+        "metadata": {
+            "@type": "http://schema.org/Book",
+            "title": project.name,
+            "author": project.repo,
+            "publisher": "Read the Docs",
+            "identifier": "readthedocs:" + project.slug,
+            "modified": build.date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "language": project.language
+        },
+        "links": project.get_downloads()
+    }
+
+    try:
+        url = "http://roe.ebookfoundation.org:3000/api/publish"
+        res = requests.post(url, headers=headers, data=json.dumps(opds), timeout=1.0)
+        # if the request didn't post properly
+        if(res and res.status_code and res.status_code >= 300):
+            log.exception("Error response from RoE POST:\r\nHTTP {}\r\n{}".format(
+                res.status_code, res.content))
+    except Exception as e:
+        log.exception('Failed to POST to RoE webhook')
 
 @app.task(queue='web')
 def send_notifications(version_pk, build_pk):
