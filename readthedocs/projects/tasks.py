@@ -1364,10 +1364,10 @@ def notify_RoE(build_pk, project_pk):
     # post headers contain API auth key from settings
     roe_key = getattr(settings, 'ROE_API_KEY', None)
     roe_sec = getattr(settings, 'ROE_API_SECRET', None)
-    if roe_key is None or roe_sec is None:
+    if roe_key is None or roe_sec is None:              # can't post without auth
         log.exception('RoE API key not available')
         return
-    headers = {
+    headers = {                 # headers to be used in POST
         'roe-key': roe_key,
         'roe-secret': roe_sec
     }
@@ -1382,21 +1382,23 @@ def notify_RoE(build_pk, project_pk):
             "title": project.name,
             "author": project.repo,
             "publisher": "Read the Docs",
-            "identifier": "readthedocs:" + project.slug,
-            "modified": build.date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "identifier": "readthedocs:" + project.slug,    # could be anything, would be isbn for proper book
+            "modified": build.date.strftime("%Y-%m-%dT%H:%M:%SZ"),  # format per RoE spec
             "language": project.language
         },
-        "links": project.get_downloads()
+        "links": project.get_downloads()    # all enabled formats
     }
 
+    # try to POST the notification to RoE
     try:
-        url = "http://roe.ebookfoundation.org:3000/api/publish"
+        url = "http://roe.ebookfoundation.org:3000/api/publish" # can be changed for testing
         res = requests.post(url, headers=headers, data=json.dumps(opds), timeout=1.0)
         # if the request didn't post properly
         if(res and res.status_code and res.status_code >= 300):
+            # RoE returns a 400 or 403 if the request is bad
             log.exception("Error response from RoE POST:\r\nHTTP {}\r\n{}".format(
                 res.status_code, res.content))
-    except Exception as e:
+    except Exception:
         log.exception('Failed to POST to RoE webhook')
 
 @app.task(queue='web')
