@@ -10,7 +10,7 @@ git+https://github.com/agjohnson/sphinx-intl.git@7b5c66bdb30f872b3b1286e371f569c
 
 Pygments==2.3.1
 
-mkdocs==1.0.4
+mkdocs==1.2.3
 Markdown==3.0.1
 
 # Docs
