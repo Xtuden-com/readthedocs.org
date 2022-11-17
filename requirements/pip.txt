@@ -3,7 +3,7 @@ pip==19.0.3
 appdirs==1.4.3
 virtualenv==16.4.3
 
-django==1.11.20  # pyup: <1.12
+django==3.2.15  # pyup: <1.12
 django-guardian==1.5.0
 django-extensions==2.1.6
 
@@ -58,7 +58,7 @@ pyquery==1.4.0
 
 # lxml is used by pyquery
 # defusedxml is recommended when using lxml
-lxml==4.3.2
+lxml==4.9.1
 defusedxml==0.5.0
 
 # Utils
@@ -98,3 +98,4 @@ user-agents<1.2.0
 
 # Required only in development and linting
 django-debug-toolbar==1.11
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
