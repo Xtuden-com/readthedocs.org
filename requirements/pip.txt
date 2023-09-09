@@ -42,7 +42,7 @@ django-allauth==0.39.1
 # introduces the usage of ``str`` which behaves differently in Py2 and
 # Py3 We should check if all the tests pass again when we drop Py2
 # support and we should be able to upgrade
-GitPython==2.1.10  # pyup: ignore
+GitPython==3.1.35  # pyup: ignore
 
 # Search
 elasticsearch==6.3.1
