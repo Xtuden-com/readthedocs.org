@@ -27,3 +27,5 @@ pytest-mock==1.10.1
 # local debugging tools
 datadiff==2.0.0
 ipdb==0.11
+ipython>=7.16.3 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.15.0 # not directly required, pinned by Snyk to avoid a vulnerability
