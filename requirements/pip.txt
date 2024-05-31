@@ -3,7 +3,7 @@ pip==19.0.3
 appdirs==1.4.3
 virtualenv==16.4.3
 
-django==1.11.20  # pyup: <1.12
+django==3.2.25  # pyup: <1.12
 django-guardian==1.5.0
 django-extensions==2.1.6
 
@@ -98,3 +98,9 @@ user-agents<1.2.0
 
 # Required only in development and linting
 django-debug-toolbar==1.11
+certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
+jinja2>=3.1.4 # not directly required, pinned by Snyk to avoid a vulnerability
+joblib>=1.1.1 # not directly required, pinned by Snyk to avoid a vulnerability
+nltk>=3.8.1 # not directly required, pinned by Snyk to avoid a vulnerability
+sqlparse>=0.4.4 # not directly required, pinned by Snyk to avoid a vulnerability
+tqdm>=4.66.3 # not directly required, pinned by Snyk to avoid a vulnerability
