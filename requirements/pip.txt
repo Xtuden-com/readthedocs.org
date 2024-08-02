@@ -33,7 +33,7 @@ redis==2.10.6  # pyup: ignore
 # when ALWAYS_EAGER = True
 celery==4.1.1  # pyup: ignore
 
-django-allauth==0.39.1
+django-allauth==0.63.6
 
 # GitPython 2.1.11 makes TestGitBackend.test_git_tags to fail because
 # of an UnicodeError
