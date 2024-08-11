@@ -98,3 +98,4 @@ user-agents<1.2.0
 
 # Required only in development and linting
 django-debug-toolbar==1.11
+nltk>=3.8.2 # not directly required, pinned by Snyk to avoid a vulnerability
